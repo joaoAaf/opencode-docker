@@ -8,12 +8,12 @@ WORKSPACE_NAME=${WORKSPACE:-workspace}
 HOME_PATH="/home/$USER_NAME"
 
 # Cria o grupo se ele não existir
-if ! getent group "$USER_NAME" >/dev/null; then
+if ! grep -q "^$USER_NAME:" /etc/group; then
     addgroup -g "$GROUP_ID" "$USER_NAME"
 fi
 
 # Cria o usuário se ele não existir
-if ! getent passwd "$USER_NAME" >/dev/null; then
+if ! grep -q "^$USER_NAME:" /etc/passwd; then
     adduser -D -u "$USER_ID" -G "$USER_NAME" -h "$HOME_PATH" -s /bin/sh "$USER_NAME"
 fi
 
