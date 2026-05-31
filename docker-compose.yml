@@ -1,0 +1,29 @@
+services:
+  opencode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: opencode-docker:latest
+    container_name: opencode
+    ports:
+      - "4096:4096"
+    environment:
+      - USERNAME="${HOST_USER}"
+      - USER_UID="${HOST_UID}"
+      - USER_GID="${HOST_GID}"
+      - WORKSPACE="${WORKSPACE_NAME}"
+      - OPENCODE_SERVER_USERNAME="${OPENCODE_SERVER_USERNAME}"
+      - OPENCODE_SERVER_PASSWORD="${OPENCODE_SERVER_PASSWORD}"
+    volumes:
+      - "${WORKSPACE_PATH}":"${WORKSPACE_PATH}"
+      - "${OPENCODE_CONFIG}":/home/"${HOST_USER}"/.config/opencode
+      - opencode-share:/home/"${HOST_USER}"/.local/share/opencode
+      - opencode-state:/home/"${HOST_USER}"/.local/state/opencode
+    working_dir: "${WORKSPACE_PATH}"
+    restart: unless-stopped
+
+volumes:
+  opencode-share:
+    name: opencode-share
+  opencode-state:
+    name: opencode-state
