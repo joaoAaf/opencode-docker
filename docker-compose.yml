@@ -16,13 +16,16 @@ services:
       - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD}
     volumes:
       - ${WORKSPACE_PATH}:${WORKSPACE_PATH}
-      - ${OPENCODE_CONFIG}:/home/${HOST_USER}/.config/opencode
+      - opencode-config:/home/${HOST_USER}/.config/opencode
       - opencode-share:/home/${HOST_USER}/.local/share/opencode
       - opencode-state:/home/${HOST_USER}/.local/state/opencode
+      - ${CUSTOM_CONFIG_PATH}/opencode.json:/home/${HOST_USER}/.config/opencode/opencode.json
     working_dir: ${WORKSPACE_PATH}
     restart: unless-stopped
 
 volumes:
+  opencode-config:
+    name: opencode-config
   opencode-share:
     name: opencode-share
   opencode-state:
