@@ -1,5 +1,8 @@
 FROM node:lts-alpine3.23
 
+# DELETA o usuário "node" para liberar o UID e GID 1000
+RUN deluser node
+
 # Instala as dependências de sistema essenciais para o OpenCode
 RUN apk update && apk add --no-cache \
     bash \
