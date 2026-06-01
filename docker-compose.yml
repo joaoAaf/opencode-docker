@@ -7,6 +7,8 @@ services:
     container_name: opencode
     ports:
       - 4096:4096
+    extra_hosts:
+      - host.docker.internal:host-gateway
     environment:
       - USERNAME=${HOST_USER}
       - USER_UID=${HOST_UID}
