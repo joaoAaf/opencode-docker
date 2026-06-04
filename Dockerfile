@@ -12,6 +12,13 @@ RUN apk update && apk add --no-cache \
     ca-certificates \
     su-exec
 
+# Instalação dos pacotes customizados definidos pelo usuário
+ARG CUSTOM_PACKAGES=""
+
+COPY install-packages.sh /usr/local/bin/install-packages.sh
+RUN chmod +x /usr/local/bin/install-packages.sh && \
+    /usr/local/bin/install-packages.sh "$CUSTOM_PACKAGES"
+
 # Instala o OpenCode globalmente
 RUN npm install -g opencode-ai
 

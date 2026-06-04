@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - CUSTOM_PACKAGES=${CUSTOM_PACKAGES:-""}
     image: opencode-docker:latest
     container_name: opencode
     ports:

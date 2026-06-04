@@ -26,9 +26,26 @@ Certifique-se de que os seguintes arquivos estejam na mesma pasta:
  ├── 📄 .env.example
  └── 📄 README.md
 ```
-
 ### 2. Configuração do Ambiente
-Crie o arquivo `.env` na raiz do projeto e ajuste com os dados do seu usuário host:
+
+#### 2.1 Instalação de Pacotes Customizáveis
+
+Este projeto permite a instalação de pacotes adicionais no tempo de build via variável `CUSTOM_PACKAGES`. Ideal para desenvolvimento em linguagens específicas ou ferramentas especializadas.
+
+**Exemplos de uso:**
+
+```bash
+# Desenvolvimento Java
+CUSTOM_PACKAGES=openjdk21-jdk,maven
+
+# Desenvolvimento Rust
+CUSTOM_PACKAGES=rust,cargo,build-base
+
+# Sem pacotes extra (padrão)
+CUSTOM_PACKAGES=
+```
+
+Crie o arquivo `.env` na raiz do projeto. Inclua as configurações padrão ou override:
 ```env
 # Configurações do Usuário                                                                                                                            
 HOST_USER=fulano                                                                                                                                      
@@ -45,6 +62,9 @@ CUSTOM_CONFIG_PATH=/home/fulano/configs
 # Usuário e senha do servidor web do OpenCode                                                                                                       > 
 OPENCODE_SERVER_USERNAME=opencode                                                                                                                   > 
 OPENCODE_SERVER_PASSWORD=admin 
+
+# Pacotes customizáveis a serem instalados no build (separados por vírgula)
+CUSTOM_PACKAGES=openjdk21-jdk,maven
 ```
 💡 *Dica:* Descubra seu UID/GID com `id -u` e `id -g`.
 
@@ -66,7 +86,7 @@ Edite o `opencode.json` para apontar para seu provedor local. Exemplo para LM St
   }
 }
 ```
-📌 **Importante:** O container não enxerga `127.0.0.1`. Use sempre `host.docker.internal` e garanta que o LM Studio esteja escutando em `0.0.0.0` (não `127.0.0.1`).
+⚠️ **Importante:** O container não enxerga `127.0.0.1`. Use sempre `host.docker.internal` e garanta que o LM Studio esteja escutando em `0.0.0.0` (não `127.0.0.1`).
 
 ### 4. Build e Inicialização
 ```bash
@@ -90,13 +110,14 @@ O protocolo ACP requer que a IDE execute o agente via `docker exec -i --user <no
 ⚠️ **Importante:** Não utilize a flag -t. O protocolo ACP utiliza JSON-RPC e o pseudo-terminal quebra a comunicação.
 
 ### Visual Studio Code
-Instale a extensão **ACP Client** e adicione ao `settings.json`:
+Instale a extensão **ACP Client** e adicione ao `settings.json` em `.vscode/settings.json` ou `~/.config/Code/User/settings.json`:
 ```json
-"acp.agents": {
-  "OpenCode-Docker": {
-    "command": "docker",
-    "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"],
-    "description": "OpenCode rodando via Docker"
+{
+  "acp.agents": {
+    "OpenCode": {
+      "command": "docker",
+      "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"]
+    }
   }
 }
 ```
@@ -106,10 +127,9 @@ Crie ou edite `acp.json` na raiz do projeto (ou `~/.config/zed/zed.json`):
 ```json
 {
   "agent_servers": {
-    "OpenCode-Docker": {
+    "OpenCode": {
       "command": "docker",
-      "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"],
-      "description": "OpenCode rodando via Docker"
+      "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"]
     }
   }
 }
@@ -142,6 +162,11 @@ Crie ou edite `acp.json` na pasta `~/.jetbrains/acp.json`:
 | ACP retorna erro ao editar arquivos | `--user` ausente ou UID/GID incompatível | Adicione `"--user", "<nome_do_usuario>"` nos args e confirme que `HOST_UID/HOST_GID` corresponde ao seu usuário (`id -u/id -g`).
 | Porta 4096 já em uso | Conflito com outro serviço local | Altere o mapeamento no `docker-compose.yml` para `4097:4096` e acesse `http://localhost:4097`. |
 | `host.docker.internal` não resolve | Versão do Docker/Compose antiga ou falta de `extra_hosts` | Atualize Docker Engine ≥20.10 e garanta que `extra_hosts: ["host.docker.internal:host-gateway"]` está no compose. |
+| Build falha com erro de pacote inválido | Nome de pacote incorreto ou inexistente no Alpine | Verifique o nome correto em [pkgs.alpinelinux.org](https://pkgs.alpinelinux.org/). Lembre-se que Alpine usa `musl libc` e tem nomes diferentes de Debian/Ubuntu. |
+| Pacotes customizados não instalados | `CUSTOM_PACKAGES` não foi passada no build ou imagem antiga em cache | 1. Confirme que `CUSTOM_PACKAGES` está definida no `.env`.<br>2. Reconstrua sem cache: `docker compose build --no-cache`. |
+| Erro "variable not defined" no build | O `ARG CUSTOM_PACKAGES` não foi mapeado no `docker-compose.yml` | Verifique se a seção `build.args` do `docker-compose.yml` contém `CUSTOM_PACKAGES=${CUSTOM_PACKAGES:-""}`. |
+| Mudança em `CUSTOM_PACKAGES` não tem efeito | Docker reusa camadas em cache no rebuild | Execute `docker compose down` seguido de `docker compose build --no-cache` para reconstruir do zero. |
+| Pacote instalado mas comando indisponível | O pacote é uma biblioteca ou depende de outro | Verifique se instalou a versão correta (ex: `openjdk21-jdk` em vez de `openjdk21-jre`). |
 
 ---
 
