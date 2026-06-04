@@ -59,7 +59,8 @@ Edite o `opencode.json` para apontar para seu provedor local. Exemplo para LM St
       "npm": "@ai-sdk/openai-compatible",
       "name": "LM Studio",
       "options": {
-        "baseURL": "http://host.docker.internal:1234/v1"
+        "baseURL": "http://host.docker.internal:1234/v1",
+        "apiKey": "sua_api_key"
       }
     }
   }
@@ -84,9 +85,9 @@ Credenciais padrão: `opencode` / `admin` (altere via variáveis de ambiente ou 
 
 ## 🔌 Integração com IDEs (Protocolo ACP)
 
-O protocolo ACP requer que a IDE execute o agente via `docker exec -i opencode opencode acp`. Configure o comando de acordo com sua IDE. Para mais detalhes consulte [Suporte ACP](https://opencode.ai/docs/pt-br/acp/).
+O protocolo ACP requer que a IDE execute o agente via `docker exec -i --user <nome_do_usuario> opencode opencode acp`. Configure o comando de acordo com sua IDE. Para mais detalhes consulte [Suporte ACP](https://opencode.ai/docs/pt-br/acp/).
 
-📌 **Importante:** ⚠️ Não utilize a flag -t. O protocolo ACP utiliza JSON-RPC e o pseudo-terminal quebra a comunicação.
+⚠️ **Importante:** Não utilize a flag -t. O protocolo ACP utiliza JSON-RPC e o pseudo-terminal quebra a comunicação.
 
 ### Visual Studio Code
 Instale a extensão **ACP Client** e adicione ao `settings.json`:
@@ -94,7 +95,7 @@ Instale a extensão **ACP Client** e adicione ao `settings.json`:
 "acp.agents": {
   "OpenCode-Docker": {
     "command": "docker",
-    "args": ["exec", "-i", "opencode", "opencode", "acp"],
+    "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"],
     "description": "OpenCode rodando via Docker"
   }
 }
@@ -107,12 +108,27 @@ Crie ou edite `acp.json` na raiz do projeto (ou `~/.config/zed/zed.json`):
   "agent_servers": {
     "OpenCode-Docker": {
       "command": "docker",
-      "args": ["exec", "-i", "opencode", "opencode", "acp"],
+      "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"],
       "description": "OpenCode rodando via Docker"
     }
   }
 }
 ```
+
+### Intellij
+Crie ou edite `acp.json` na pasta `~/.jetbrains/acp.json`:
+```json
+{
+  "default_mcp_settings": {},
+  "agent_servers": {
+    "OpenCode": {
+      "command": "docker",
+      "args": ["exec", "-i", "--user", "<nome_do_usuario>", "opencode", "opencode", "acp"]
+    }
+  }
+}
+```
+📌 *Obs:* Substitua `<nome_do_usuario>` no `args` pelo seu usuário (ex: `"--user", "fulano"`).
 
 ---
 
@@ -123,6 +139,7 @@ Crie ou edite `acp.json` na raiz do projeto (ou `~/.config/zed/zed.json`):
 | ACP retorna `File not found` | Caminho absoluto diferente entre host e container | Verifique se `WORKSPACE_ABSOLUTE_PATH` no `.env` é **exatamente igual** ao caminho que a IDE usa. O bind mount deve ser espelhado. |
 | Container não encontra LM Studio/Ollama | Rede Docker isolada ou firewall bloqueando | 1. Garanta que `extra_hosts` está no `docker-compose.yml`.<br>2. No LM Studio, mude o host do servidor para `0.0.0.0` e reinicie.<br>3. Verifique firewall/portas. |
 | `Permission denied` ao editar arquivos | UID/GID do container diferente do host | Confirme que `HOST_UID` e `HOST_GID` no `.env` correspondem ao seu usuário (`id -u` / `id -g`). |
+| ACP retorna erro ao editar arquivos | `--user` ausente ou UID/GID incompatível | Adicione `"--user", "<nome_do_usuario>"` nos args e confirme que `HOST_UID/HOST_GID` corresponde ao seu usuário (`id -u/id -g`).
 | Porta 4096 já em uso | Conflito com outro serviço local | Altere o mapeamento no `docker-compose.yml` para `4097:4096` e acesse `http://localhost:4097`. |
 | `host.docker.internal` não resolve | Versão do Docker/Compose antiga ou falta de `extra_hosts` | Atualize Docker Engine ≥20.10 e garanta que `extra_hosts: ["host.docker.internal:host-gateway"]` está no compose. |
 
